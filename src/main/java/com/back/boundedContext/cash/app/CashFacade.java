@@ -12,14 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-
 @Service
 @RequiredArgsConstructor
 public class CashFacade {
+    private final CashSupport cashSupport;
     private final CashSyncMemberUseCase cashSyncMemberUseCase;
     private final CashCreateWalletUseCase cashCreateWalletUseCase;
     private final CashCompleteOrderPaymentUseCase cashCompleteOrderPaymentUseCase;
-    private final CashSupport cashSupport;
     private final CashCompletePayoutUseCase cashCompletePayoutUseCase;
 
     @Transactional
@@ -37,18 +36,20 @@ public class CashFacade {
         return cashSupport.findMemberByUsername(username);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Wallet> findWalletByHolder(CashMember holder) {
         return cashSupport.findWalletByHolder(holder);
     }
 
+    @Transactional
     public void completeOrderPayment(OrderDto order, long pgPaymentAmount) {
         cashCompleteOrderPaymentUseCase.completeOrderPayment(order, pgPaymentAmount);
     }
+
     @Transactional(readOnly = true)
     public Optional<Wallet> findWalletByHolderId(int holderId) {
         return cashSupport.findWalletByHolderId(holderId);
     }
-
 
     @Transactional
     public void completePayout(PayoutDto payout) {

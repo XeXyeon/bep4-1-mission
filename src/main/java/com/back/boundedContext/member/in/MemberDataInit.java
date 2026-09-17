@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberDataInit {
     private final MemberDataInit self;
     private final MemberFacade memberFacade;
+
     public MemberDataInit(
             @Lazy MemberDataInit self,
             MemberFacade memberFacade
@@ -43,4 +44,3 @@ public class MemberDataInit {
         Member user3Member = memberFacade.join("user3", "1234", "유저3").getData();
     }
 }
-

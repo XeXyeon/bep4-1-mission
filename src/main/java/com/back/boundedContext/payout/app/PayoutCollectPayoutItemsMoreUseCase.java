@@ -3,7 +3,7 @@ package com.back.boundedContext.payout.app;
 import com.back.boundedContext.payout.domain.*;
 import com.back.boundedContext.payout.out.PayoutCandidateItemRepository;
 import com.back.boundedContext.payout.out.PayoutRepository;
-import com.back.global.RsData.RsData;
+import com.back.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -53,6 +53,10 @@ public class PayoutCollectPayoutItemsMoreUseCase {
         );
     }
 
+    private Optional<Payout> findActiveByPayee(PayoutMember payee) {
+        return payoutRepository.findByPayeeAndPayoutDateIsNull(payee);
+    }
+
     private List<PayoutCandidateItem> findPayoutReadyCandidateItems(int limit) {
         LocalDateTime daysAgo = LocalDateTime
                 .now()
@@ -64,9 +68,5 @@ public class PayoutCollectPayoutItemsMoreUseCase {
                 daysAgo,
                 PageRequest.of(0, limit)
         );
-    }
-
-    private Optional<Payout> findActiveByPayee(PayoutMember payee) {
-        return payoutRepository.findByPayeeAndPayoutDateIsNull(payee);
     }
 }

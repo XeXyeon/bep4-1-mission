@@ -8,14 +8,24 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 @Entity
-@NoArgsConstructor
 @Table(name = "MEMBER_MEMBER")
 @Getter
+@NoArgsConstructor
 public class Member extends SourceMember {
     public Member(String username, String password, String nickname) {
         super(username, password, nickname);
+    }
+
+    public MemberDto toDto() {
+        return new MemberDto(
+                getId(),
+                getCreateDate(),
+                getModifyDate(),
+                getUsername(),
+                getNickname(),
+                getActivityScore()
+        );
     }
 
     public int increaseActivityScore(int amount) {
@@ -28,17 +38,5 @@ public class Member extends SourceMember {
         );
 
         return getActivityScore();
-    }
-
-
-    public MemberDto toDto() {
-        return new MemberDto(
-                getId(),
-                getCreateDate(),
-                getModifyDate(),
-                getUsername(),
-                getNickname(),
-                getActivityScore()
-        );
     }
 }

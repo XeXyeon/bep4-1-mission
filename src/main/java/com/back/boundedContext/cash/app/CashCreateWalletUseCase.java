@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CashCreateWalletUseCase {
-    private final WalletRepository walletRepository;
     private final CashMemberRepository cashMemberRepository;
+    private final WalletRepository walletRepository;
 
     public Wallet createWallet(CashMemberDto member) {
         CashMember _member = cashMemberRepository.getReferenceById(member.getId());

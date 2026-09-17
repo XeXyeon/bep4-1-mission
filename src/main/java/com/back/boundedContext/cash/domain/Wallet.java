@@ -13,7 +13,6 @@ import java.util.List;
 import static jakarta.persistence.CascadeType.PERSIST;
 import static jakarta.persistence.CascadeType.REMOVE;
 
-
 @Entity
 @Table(name = "CASH_WALLET")
 @NoArgsConstructor
@@ -22,7 +21,7 @@ public class Wallet extends BaseManualIdAndTime {
     @ManyToOne(fetch = FetchType.LAZY)
     private CashMember holder;
 
-    // 잔액, 잔고
+    @Getter
     private long balance;
 
     @OneToMany(mappedBy = "wallet", cascade = {PERSIST, REMOVE}, orphanRemoval = true)
@@ -33,8 +32,19 @@ public class Wallet extends BaseManualIdAndTime {
         this.holder = holder;
     }
 
+    public WalletDto toDto() {
+        return new WalletDto(
+                getId(),
+                getCreateDate(),
+                getModifyDate(),
+                holder.getId(),
+                holder.getUsername(),
+                balance
+        );
+    }
+
     public boolean hasBalance() {
-            return balance > 0;
+        return balance > 0;
     }
 
     public void credit(long amount, CashLog.EventType eventType, String relTypeCode, int relId) {
@@ -79,17 +89,5 @@ public class Wallet extends BaseManualIdAndTime {
         cashLogs.add(cashLog);
 
         return cashLog;
-    }
-
-
-    public WalletDto toDto() {
-        return new WalletDto(
-                getId(),
-                getCreateDate(),
-                getModifyDate(),
-                holder.getId(),
-                holder.getUsername(),
-                balance
-        );
     }
 }

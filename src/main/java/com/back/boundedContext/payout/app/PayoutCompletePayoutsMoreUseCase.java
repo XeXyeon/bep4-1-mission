@@ -2,7 +2,7 @@ package com.back.boundedContext.payout.app;
 
 import com.back.boundedContext.payout.domain.Payout;
 import com.back.boundedContext.payout.out.PayoutRepository;
-import com.back.global.RsData.RsData;
+import com.back.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

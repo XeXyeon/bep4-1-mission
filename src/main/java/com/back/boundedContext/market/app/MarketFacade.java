@@ -4,7 +4,7 @@ import com.back.boundedContext.market.domain.Cart;
 import com.back.boundedContext.market.domain.MarketMember;
 import com.back.boundedContext.market.domain.Order;
 import com.back.boundedContext.market.domain.Product;
-import com.back.global.RsData.RsData;
+import com.back.global.rsData.RsData;
 import com.back.shared.market.dto.MarketMemberDto;
 import com.back.shared.member.dto.MemberDto;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +16,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MarketFacade {
-    private final MarketSyncMemberUseCase marketSyncMemberUseCase;
     private final MarketSupport marketSupport;
+    private final MarketSyncMemberUseCase marketSyncMemberUseCase;
     private final MarketCreateProductUseCase marketCreateProductUseCase;
     private final MarketCreateCartUseCase marketCreateCartUseCase;
     private final MarketCreateOrderUseCase marketCreateOrderUseCase;
@@ -29,6 +29,11 @@ public class MarketFacade {
         return marketSyncMemberUseCase.syncMember(member);
     }
 
+    @Transactional(readOnly = true)
+    public long productsCount() {
+        return marketSupport.countProducts();
+    }
+
     @Transactional
     public Product createProduct(
             MarketMember seller,
@@ -36,8 +41,8 @@ public class MarketFacade {
             int sourceId,
             String name,
             String description,
-            int price,
-            int salePrice
+            long price,
+            long salePrice
     ) {
         return marketCreateProductUseCase.createProduct(
                 seller,
@@ -51,13 +56,13 @@ public class MarketFacade {
     }
 
     @Transactional(readOnly = true)
-    public long productsCount() {
-        return marketSupport.countProducts();
-    }
-
-    @Transactional(readOnly = true)
     public Optional<MarketMember> findMemberByUsername(String username) {
         return marketSupport.findMemberByUsername(username);
+    }
+
+    @Transactional
+    public RsData<Cart> createCart(MarketMemberDto buyer) {
+        return marketCreateCartUseCase.createCart(buyer);
     }
 
     @Transactional(readOnly = true)
@@ -68,11 +73,6 @@ public class MarketFacade {
     @Transactional(readOnly = true)
     public Optional<Product> findProductById(int id) {
         return marketSupport.findProductById(id);
-    }
-
-    @Transactional
-    public RsData<Cart> createCart(MarketMemberDto buyer) {
-        return marketCreateCartUseCase.createCart(buyer);
     }
 
     @Transactional(readOnly = true)
