@@ -1,6 +1,6 @@
-package com.back.shared.member.dto;
+package com.back.shared.cash.dto;
 
-import com.back.boundedContext.member.domain.Member;
+import com.back.boundedContext.cash.domain.CashMember;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @Getter
-public class MemberDto {
+public class CashMemberDto {
     private final int id;
     private final LocalDateTime createDate;
     private final LocalDateTime modifyDate;
@@ -16,7 +16,7 @@ public class MemberDto {
     private final String nickname;
     private final int activityScore;
 
-    public MemberDto(Member member) {
+    public CashMemberDto(CashMember member) {
         this(
                 member.getId(),
                 member.getCreateDate(),
