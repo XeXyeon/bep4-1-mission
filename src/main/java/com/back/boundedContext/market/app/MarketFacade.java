@@ -1,7 +1,13 @@
 package com.back.boundedContext.market.app;
 
+import com.back.boundedContext.market.domain.Cart;
 import com.back.boundedContext.market.domain.MarketMember;
+import com.back.boundedContext.market.domain.Order;
 import com.back.boundedContext.market.domain.Product;
+import com.back.global.rsData.RsData;
+import com.back.shared.cash.event.CashOrderPaymentFailedEvent;
+import com.back.shared.cash.event.CashOrderPaymentSucceededEvent;
+import com.back.shared.market.dto.MarketMemberDto;
 import com.back.shared.member.dto.MemberDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +21,10 @@ public class MarketFacade {
     private final MarketSupport marketSupport;
     private final MarketSyncMemberUseCase marketSyncMemberUseCase;
     private final MarketCreateProductUseCase marketCreateProductUseCase;
-
+    private final MarketCreateCartUseCase marketCreateCartUseCase;
+    private final MarketCreateOrderUseCase marketCreateOrderUseCase;
+    private final MarketCompleteOrderPaymentUseCase marketCompleteOrderPaymentUseCase;
+    private final MarketCancelOrderRequestPaymentUseCase marketCancelOrderRequestPaymentUseCase;
 
     @Transactional
     public MarketMember syncMember(MemberDto member) {
@@ -51,5 +60,50 @@ public class MarketFacade {
     @Transactional(readOnly = true)
     public Optional<MarketMember> findMemberByUsername(String username) {
         return marketSupport.findMemberByUsername(username);
+    }
+
+    @Transactional
+    public RsData<Cart> createCart(MarketMemberDto buyer) {
+        return marketCreateCartUseCase.createCart(buyer);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Cart> findCartByBuyer(MarketMember buyer) {
+        return marketSupport.findCartByBuyer(buyer);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Product> findProductById(int id) {
+        return marketSupport.findProductById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public long ordersCount() {
+        return marketSupport.countOrders();
+    }
+
+    @Transactional
+    public RsData<Order> createOrder(Cart cart) {
+        return marketCreateOrderUseCase.createOrder(cart);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Order> findOrderById(int id) {
+        return marketSupport.findOrderById(id);
+    }
+
+    @Transactional
+    public void requestPayment(Order order, long pgPaymentAmount) {
+        order.requestPayment(pgPaymentAmount);
+    }
+
+    @Transactional
+    public void handle(CashOrderPaymentSucceededEvent event) {
+        marketCompleteOrderPaymentUseCase.handle(event);
+    }
+
+    @Transactional
+    public void handle(CashOrderPaymentFailedEvent event) {
+        marketCancelOrderRequestPaymentUseCase.handle(event);
     }
 }
