@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toss Payments Test</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f6f8; color: #20242a; font: 16px system-ui, sans-serif; }
+  main { max-width: 640px; padding: 32px 20px; margin: auto; }
+  h1 { font-size: 26px; }
+  label { display: block; margin: 20px 0; }
+  input, button { font: inherit; width: 100%; padding: 12px; border-radius: 6px; }
+  input { display: block; margin-top: 8px; border: 1px solid #a6adb5; }
+  button { border: 0; background: #006b58; color: white; cursor: pointer; margin: 8px 0; }
+  button:disabled { opacity: .5; cursor: default; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; background: white; border-left: 3px solid #b65e14; padding: 16px; }
+  a { color: #006b58; }
+</style>
+<main>
+  <h1>Toss Payments Test</h1>
+  <form id="checkout">
+    <label>Test client key<input id="clientKey" required autocomplete="off" placeholder="test_ck_..." pattern="test_ck_.+"></label>
+    <label>Database order ID<input id="order" type="number" required min="1" step="1"></label>
+    <label>PG amount (KRW)<input id="amount" type="number" required min="1" max="2147483647" step="1"></label>
+    <button id="pay">Open test payment</button>
+  </form>
+  <section id="result" hidden>
+    <h2 id="state">Authentication result</h2>
+    <button id="confirm" hidden>Request server approval</button>
+    <a href="/payment-test.html">New test</a>
+  </section>
+  <pre id="output" role="status" aria-live="polite">Ready</pre>
+</main>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<script>
+  const checkout = document.querySelector('#checkout');
+  const pay = document.querySelector('#pay');
+  const confirmButton = document.querySelector('#confirm');
+  const output = document.querySelector('#output');
+  const state = document.querySelector('#state');
+  const params = new URLSearchParams(location.search);
+  const storageKey = 'toss-test-pending';
+  let approval;
+  const show = value => { output.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); };
+
+  checkout.addEventListener('submit', async event => {
+    event.preventDefault();
+    pay.disabled = true;
+    try {
+      const key = document.querySelector('#clientKey').value.trim();
+      const id = Number(document.querySelector('#order').value);
+      const amount = Number(document.querySelector('#amount').value);
+      if (!key.startsWith('test_ck_')) throw new Error('Use an API test client key (test_ck_).');
+      if (!Number.isSafeInteger(id) || id < 1 || !Number.isSafeInteger(amount) || amount < 1 || amount > 2147483647) throw new Error('Invalid order ID or amount.');
+      if (!window.TossPayments) throw new Error('Toss SDK could not load. Check your network.');
+      const orderId = `order-${id}-${crypto.randomUUID()}`;
+      sessionStorage.setItem(storageKey, JSON.stringify({ id, orderId, amount }));
+      const payment = TossPayments(key).payment({ customerKey: TossPayments.ANONYMOUS });
+      await payment.requestPayment({
+        method: 'CARD', amount: { currency: 'KRW', value: amount },
+        orderId, orderName: `Test order ${id}`,
+        successUrl: `${location.origin}/payment-test.html?result=success`,
+        failUrl: `${location.origin}/payment-test.html?result=fail`
+      });
+    } catch (error) { show(error.message); }
+    finally { pay.disabled = false; }
+  });
+
+  if (params.has('result')) {
+    checkout.hidden = true;
+    document.querySelector('#result').hidden = false;
+    try {
+      if (params.get('result') !== 'success') throw new Error(`${params.get('code') || 'FAILED'}: ${params.get('message') || 'Payment canceled'}`);
+      const pending = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+      const paymentKey = params.get('paymentKey');
+      const orderId = params.get('orderId');
+      const amount = Number(params.get('amount'));
+      if (!pending || !paymentKey || orderId !== pending.orderId || amount !== pending.amount) throw new Error('Payment result does not match this test request.');
+      approval = { id: pending.id, paymentKey, orderId, amount };
+      state.textContent = 'Authenticated - approval pending';
+      show({ orderId, amount });
+      confirmButton.hidden = false;
+      history.replaceState(null, '', location.pathname);
+    } catch (error) { state.textContent = 'Test failed'; show(error.message); }
+  }
+
+  confirmButton.addEventListener('click', async () => {
+    confirmButton.disabled = true;
+    try {
+      const { id, ...body } = approval;
+      const response = await fetch(`/api/v1/market/orders/${id}/payment/confirm/by/tossPayments`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const raw = await response.text();
+      let data;
+      try { data = JSON.parse(raw); } catch { data = raw; }
+      show({ httpStatus: response.status, response: data });
+      state.textContent = response.ok ? 'Server response received' : 'Approval request failed';
+      sessionStorage.removeItem(storageKey);
+    } catch (error) {
+      state.textContent = 'Approval outcome unknown';
+      show(error.message + '\nCheck server payment status before retrying.');
+    }
+  });
+</script>
+</html>

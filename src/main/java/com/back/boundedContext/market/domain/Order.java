@@ -25,6 +25,7 @@ import static jakarta.persistence.FetchType.LAZY;
 public class Order extends BaseIdAndTime {
     @ManyToOne(fetch = LAZY)
     private MarketMember buyer;
+    private LocalDateTime cancelDate;
     private LocalDateTime requestPaymentDate;
     private LocalDateTime paymentDate;
     private long price;
@@ -39,6 +40,20 @@ public class Order extends BaseIdAndTime {
         cart.getItems().forEach(item -> {
             addItem(item.getProduct());
         });
+    }
+
+    public OrderDto toDto() {
+        return new OrderDto(
+                getId(),
+                getCreateDate(),
+                getModifyDate(),
+                buyer.getId(),
+                buyer.getNickname(),
+                price,
+                salePrice,
+                requestPaymentDate,
+                paymentDate
+        );
     }
 
     public void addItem(Product product) {
@@ -64,12 +79,20 @@ public class Order extends BaseIdAndTime {
         return paymentDate != null;
     }
 
+    public boolean isCanceled() {
+        return cancelDate != null;
+    }
+
+    public boolean isPaymentInProgress() {
+        return requestPaymentDate != null && paymentDate == null && cancelDate == null;
+    }
+
     public void requestPayment(long pgPaymentAmount) {
         requestPaymentDate = LocalDateTime.now();
 
         publishEvent(
                 new MarketOrderPaymentRequestedEvent(
-                        new OrderDto(this),
+                        toDto(),
                         pgPaymentAmount
                 )
         );
